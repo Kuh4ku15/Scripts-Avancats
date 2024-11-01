@@ -1,1 +1,121 @@
+#!/bin/bash
+
+# Colores para el texto
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # Sin color
+
+# Función para mostrar el menú
+mostrar_menu() {
+    echo -e "${BLUE}Seleccione una opción:${NC}"
+    echo "1. Mostrar contenido de un directorio"
+    echo "2. Crear un archivo"
+    echo "3. Crear un directorio"
+    echo "4. Buscar un archivo"
+    echo "5. Cambiar permisos de un archivo"
+    echo "6. Salir"
+    echo -n "Ingrese una opción: "
+}
+
+# Función para mostrar contenido de un directorio
+mostrar_contenido() {
+    echo -n "Ingrese el directorio a listar (deje en blanco para el actual): "
+    read dir
+    dir=${dir:-"."}
+    echo -e "${GREEN}Contenido de $dir:${NC}"
+    ls -la "$dir"
+}
+
+# Función para crear un archivo en un directorio especificado
+crear_archivo() {
+    echo -n "Ingrese el nombre del archivo: "
+    read archivo
+    echo -n "Ingrese el directorio donde quiere crear el archivo (deje en blanco para el actual): "
+    read dir
+    dir=${dir:-"."}
+    if [[ ! -d $dir ]]; then
+        echo -e "${RED}Error: El directorio $dir no existe. No se creó el archivo.${NC}"
+        return
+    fi
+    touch "$dir/$archivo"
+    echo -e "${GREEN}Archivo $archivo creado en $dir.${NC}"
+}
+
+# Función para crear un directorio
+crear_directorio() {
+    echo -n "Ingrese el nombre del directorio: "
+    read directorio
+    mkdir -p "$directorio"
+    echo -e "${GREEN}Directorio $directorio creado.${NC}"
+}
+
+# Función para buscar un archivo
+buscar_archivo() {
+    echo -n "Ingrese el nombre del archivo a buscar: "
+    read archivo
+    echo -n "Ingrese el directorio donde buscar (deje en blanco para el actual): "
+    read dir
+    dir=${dir:-"."}
+    
+    # Verifica si el directorio existe
+    if [[ ! -d $dir ]]; then
+        echo -e "${RED}Error: El directorio $dir no existe.${NC}"
+        return
+    fi
+
+    # Realiza la búsqueda del archivo
+    resultado=$(find "$dir" -name "$archivo" 2>/dev/null)
+
+    # Verifica si el archivo fue encontrado
+    if [[ -z $resultado ]]; then
+        echo -e "${RED}Error: El archivo $archivo no se encontró en el directorio $dir.${NC}"
+    else
+        echo -e "${GREEN}Archivo(s) encontrado(s):${NC}"
+        echo "$resultado"
+    fi
+}
+
+# Función para cambiar permisos de un archivo en un directorio especificado
+cambiar_permisos() {
+    echo -n "Ingrese el nombre del archivo: "
+    read archivo
+    echo -n "Ingrese el directorio donde se encuentra el archivo (deje en blanco para el actual): "
+    read dir
+    dir=${dir:-"."}
+    
+    # Verifica si el directorio existe
+    if [[ ! -d $dir ]]; then
+        echo -e "${RED}Error: El directorio $dir no existe.${NC}"
+        return
+    fi
+
+    # Verifica si el archivo existe en el directorio especificado
+    filepath="$dir/$archivo"
+    if [[ ! -f $filepath ]]; then
+        echo -e "${RED}Error: El archivo $archivo no se encontró en el directorio $dir.${NC}"
+        return
+    fi
+    
+    echo -n "Ingrese los permisos en formato numérico (ej. 755): "
+    read permisos
+    chmod "$permisos" "$filepath"
+    echo -e "${GREEN}Permisos de $filepath cambiados a $permisos.${NC}"
+}
+
+# Bucle principal
+while true; do
+    mostrar_menu
+    read opcion
+    case $opcion in
+        1) mostrar_contenido ;;
+        2) crear_archivo ;;
+        3) crear_directorio ;;
+        4) buscar_archivo ;;
+        5) cambiar_permisos ;;
+        6) echo -e "${GREEN}Saliendo...${NC}"; break ;;
+        *) echo -e "${RED}Opción inválida. Inténtelo de nuevo.${NC}" ;;
+    esac
+    echo # Línea en blanco para espaciar
+done
 
