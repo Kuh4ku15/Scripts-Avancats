@@ -1,1 +1,121 @@
+#!/bin/bash
+
+# Preguntar al usuario su nombre
+read -p "Por favor, ingrese su nombre de usuario en Ubuntu: " NOMBRE_USUARIO
+
+# Definir la carpeta Escritorio del usuario ingresado
+ESCRITORIO="/home/$NOMBRE_USUARIO/Escritorio"
+
+# Verificar y crear la carpeta "Escritorio" si no existe
+if [ ! -d "$ESCRITORIO" ]; then
+  echo "No se encontró la carpeta 'Escritorio' para el usuario '$NOMBRE_USUARIO'. Creando el directorio..."
+  mkdir -p "$ESCRITORIO" || {
+    echo "No se pudo crear el directorio '$ESCRITORIO'. Verifique los permisos."
+    exit 1
+  }
+fi
+
+# Función para registrar un coche nuevo en el taller
+registrar_coche() {
+  echo "=== Registro de un coche nuevo ==="
+  
+  # Solicitar detalles del cliente y del coche
+  read -p "Nombre del cliente: " nombre_cliente
+  read -p "Teléfono del cliente: " telefono
+  read -p "Modelo del coche: " modelo_coche
+  read -p "Matrícula del coche: " matricula
+  read -p "Servicios solicitados (separados por comas): " servicios
+  
+  # Archivo de registro en la carpeta "Escritorio"
+  FICHERO_ESCRITORIO="$ESCRITORIO/${matricula}.txt"
+  
+  # Verificar si el archivo ya existe en el escritorio
+  if [[ -f "$FICHERO_ESCRITORIO" ]]; then
+    echo "El coche con matrícula $matricula ya está registrado en el taller."
+    return
+  fi
+  
+  # Crear el archivo en el escritorio
+  touch "$FICHERO_ESCRITORIO" 2>/dev/null || {
+    echo "No se pudo crear el archivo en el escritorio. Verifique los permisos."
+    return
+  }
+
+  # Escribir la información en el archivo de registro en el escritorio
+  {
+    echo "=== Registro del coche ==="
+    echo "Cliente: $nombre_cliente"
+    echo "Teléfono: $telefono"
+    echo "Modelo del coche: $modelo_coche"
+    echo "Matrícula: $matricula"
+    echo "Servicios solicitados: $servicios"
+    echo "Fecha de entrada: $(date "+%Y-%m-%d %H:%M:%S")"
+  } > "$FICHERO_ESCRITORIO"
+
+  echo "Registro creado para el coche con matrícula $matricula en $FICHERO_ESCRITORIO."
+}
+
+# Función para mostrar todos los registros de coches en el taller
+ver_registros() {
+  echo "=== Listado de coches en el taller ==="
+  
+  # Buscar archivos de registro en la carpeta "Escritorio"
+  if [ -z "$(ls -A "$ESCRITORIO"/*.txt 2>/dev/null)" ]; then
+    echo "No hay coches registrados en el taller."
+  else
+    # Mostrar todos los archivos de registro en el escritorio
+    for archivo in "$ESCRITORIO"/*.txt; do
+      [ -f "$archivo" ] || continue
+      echo "-------------------------------------"
+      cat "$archivo"
+      echo "-------------------------------------"
+      echo
+    done
+  fi
+}
+
+# Función para eliminar un registro de coche
+eliminar_coche() {
+  echo "=== Eliminar registro de coche ==="
+  read -p "Ingrese la matrícula del coche a eliminar: " matricula
+
+  # Archivo de registro en la carpeta "Escritorio"
+  FICHERO_ESCRITORIO="$ESCRITORIO/${matricula}.txt"
+  
+  # Verificar si el archivo existe
+  if [[ -f "$FICHERO_ESCRITORIO" ]]; then
+    rm "$FICHERO_ESCRITORIO" && echo "Registro eliminado para el coche con matrícula $matricula."
+  else
+    echo "No se encontró el registro para el coche con matrícula $matricula."
+  fi
+}
+
+# Menú principal
+while true; do
+  echo "=== Taller Mecánico ==="
+  echo "1) Registrar coche nuevo"
+  echo "2) Ver registros de coches"
+  echo "3) Eliminar registro de coche"
+  echo "4) Salir"
+  read -p "Seleccione una opción: " opcion
+
+  case $opcion in
+    1)
+      registrar_coche
+      ;;
+    2)
+      ver_registros
+      ;;
+    3)
+      eliminar_coche
+      ;;
+    4)
+      echo "Saliendo del sistema de taller mecánico."
+      break
+      ;;
+    *)
+      echo "Opción no válida. Inténtelo de nuevo."
+      ;;
+  esac
+done
 
