@@ -1,1 +1,130 @@
+#!/bin/bash
+
+# Verificar si el script se está ejecutando como root
+if [ "$EUID" -ne 0 ]; then  # Comprueba si el ID de usuario efectivo no es 0 (es decir, si no es root)
+  echo "Este script debe ser ejecutado como root."  # Muestra un mensaje indicando que debe ejecutarse como root
+  exit 1  # Termina el script con un código de salida 1, indicando error
+fi
+
+
+# Función para gestionar servicios
+gestionar_servicio() {
+  read -p "Ingrese el nombre del servicio: " servicio  # Solicita al usuario el nombre del servicio a gestionar
+
+  if systemctl list-units --type=service | grep -q "$servicio"; then  # Comprueba si el servicio existe en systemctl
+    echo "¿Qué acción desea realizar? (start, stop, status, restart)"  # Solicita al usuario una acción para el servicio
+    read -p "Ingrese la acción: " accion  # Almacena la acción ingresada en la variable `accion`
+
+    case $accion in  # Inicia una estructura `case` para gestionar las acciones posibles
+      start)  # Si el usuario selecciona "start"
+        systemctl start "$servicio" && echo "Servicio '$servicio' iniciado." || echo "Error al iniciar el servicio '$servicio'."  # Inicia el servicio y muestra un mensaje de éxito o error
+        ;;
+      stop)  # Si el usuario selecciona "stop"
+        systemctl stop "$servicio" && echo "Servicio '$servicio' detenido." || echo "Error al detener el servicio '$servicio'."  # Detiene el servicio y muestra un mensaje de éxito o error
+        ;;
+      status)  # Si el usuario selecciona "status"
+        systemctl status "$servicio" || echo "No se pudo obtener el estado del servicio '$servicio'."  # Muestra el estado del servicio y maneja errores
+        ;;
+      restart)  # Si el usuario selecciona "restart"
+        systemctl restart "$servicio" && echo "Servicio '$servicio' reiniciado." || echo "Error al reiniciar el servicio '$servicio'."  # Reinicia el servicio y muestra un mensaje de éxito o error
+        ;;
+      *) echo "Acción inválida." ;;  # Si la acción no coincide con ninguna de las opciones, muestra un mensaje de error
+    esac
+  else
+    echo "El servicio '$servicio' no está encontrado."  # Muestra un mensaje si el servicio no se encuentra
+    sleep 3  # Espera 3 segundos para que el usuario pueda leer el mensaje
+  fi
+}
+
+
+# Función para actualizar el sistema
+actualizar_sistema() {
+  echo "Actualizando la lista de paquetes..."  # Muestra un mensaje sobre la actualización de la lista de paquetes
+  apt update && echo "Lista de paquetes actualizada." || echo "Error al actualizar la lista de paquetes."  # Ejecuta `apt update` y muestra un mensaje de éxito o error
+
+ 
+  echo "Actualizando los paquetes..."  # Muestra un mensaje sobre la actualización de paquetes
+  apt upgrade -y && echo "Paquetes actualizados." || echo "Error al actualizar los paquetes."  # Ejecuta `apt upgrade -y` y muestra un mensaje de éxito o error
+
+  echo "Limpiando paquetes innecesarios..."  # Muestra un mensaje sobre la limpieza de paquetes innecesarios
+  apt autoremove -y && echo "Paquetes innecesarios eliminados." || echo "Error al limpiar paquetes innecesarios."  # Ejecuta `apt autoremove -y` y muestra un mensaje de éxito o error
+}
+
+
+# Función para hacer una copia de seguridad
+copia_seguridad() {  # Define una función para hacer una copia de seguridad de un directorio
+  read -p "Ingrese el directorio que desea respaldar: " directorio  # Solicita el directorio a respaldar
+  read -p "Ingrese el directorio de destino para la copia de seguridad: " destino  # Solicita el directorio de destino para la copia
+
+  if [ -d "$directorio" ]; then  # Verifica si el directorio a respaldar existe
+    if [ -d "$destino" ]; then  # Verifica si el directorio de destino existe
+      fecha=$(date +%Y%m%d_%H%M%S)  # Genera una marca de tiempo para el nombre del archivo de respaldo
+      nombre_backup="backup_${fecha}.tar.gz"  # Define el nombre del archivo de respaldo
+      tar -czf "$destino/$nombre_backup" -C "$directorio" .  # Crea un archivo comprimido con el contenido del directorio
+      echo "Copia de seguridad de '$directorio' realizada en '$destino/$nombre_backup'."  # Muestra un mensaje de éxito
+    else
+      echo "El directorio de destino '$destino' no existe."  # Muestra un mensaje de error si el directorio de destino no existe
+    fi
+  else
+    echo "El directorio '$directorio' no existe."  # Muestra un mensaje de error si el directorio a respaldar no existe
+    sleep 3  # Espera 3 segundos para que el usuario vea el mensaje
+  fi
+}
+
+
+# Función para mostrar la información del sistema
+info_sistema() {
+  echo "Información del sistema:"  # Muestra un encabezado de información del sistema
+  echo "------------------------"
+  echo "Nombre del sistema: $(uname -s)"  # Muestra el nombre del sistema operativo
+  echo "Versión del kernel: $(uname -r)"  # Muestra la versión del kernel
+  echo "Arquitectura: $(uname -m)"  # Muestra la arquitectura del sistema
+  echo ""
+ 
+  echo "Uso de disco:"  # Muestra el uso del disco
+  df -h  # Ejecuta `df -h` para mostrar el espacio en disco en formato legible
+  echo ""
+ 
+  echo "Uso de memoria:"  # Muestra el uso de la memoria
+  free -h  # Ejecuta `free -h` para mostrar la memoria utilizada y disponible en formato legible
+  echo ""
+ 
+  echo "Cargando información de hardware:"  # Muestra información de la CPU
+  lscpu  # Ejecuta `lscpu` para mostrar la información de la CPU
+  echo ""
+ 
+  echo "Pulsa Enter para continuar..."  # Espera a que el usuario pulse Enter
+  read
+}
+# Función para listar servicios
+listar_servicios() {
+  echo "Servicios disponibles:"  # Muestra un encabezado
+  systemctl list-units --type=service --no-pager  # Lista todos los servicios en el sistema
+  echo ""
+}
+
+# Menú
+while true; do  # Inicia un bucle infinito para mostrar el menú de opciones
+  echo "Seleccione una opción:"
+  echo "1) Gestionar un servicio"
+  echo "2) Actualizar el sistema"
+  echo "3) Hacer una copia de seguridad"
+  echo "4) Mostrar información del sistema"
+  echo "5) Listar servicios"
+  echo "6) Salir"
+ 
+  read -p "Ingrese su opción: " opcion  # Solicita al usuario que seleccione una opción
+ 
+  case $opcion in  # Estructura `case` para ejecutar una acción según la opción seleccionada
+    1) gestionar_servicio ;;  # Llama a `gestionar_servicio` si se selecciona la opción 1
+    2) actualizar_sistema ;;  # Llama a `actualizar_sistema` si se selecciona la opción 2
+    3) copia_seguridad ;;  # Llama a `copia_seguridad` si se selecciona la opción 3
+    4) info_sistema ;;  # Llama a `info_sistema` si se selecciona la opción 4
+    5) listar_servicios ;;  # Llama a `listar_servicios` si se selecciona la opción 5
+    6) echo "Saliendo..."; exit 0 ;;  # Termina el script si se selecciona la opción 6
+    *) echo "Opción inválida. Intente de nuevo." ;;  # Muestra un mensaje si la opción no es válida
+  esac
+  echo ""
+  read -p "Presione Enter para continuar..."  # Espera a que el usuario presione Enter antes de mostrar el menú nuevamente
+done
 
