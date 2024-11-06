@@ -2,8 +2,8 @@
 
 # Comprova si s'executa amb privilegis de root
 if [ "$(id -u)" -ne 0 ]; then
-	echo "Aquest script s'ha d'executar com a root" >&2
-	exit 1
+    echo "Aquest script s'ha d'executar com a root" >&2
+    exit 1
 fi
 
 # Defineix el fitxer de registre
@@ -11,36 +11,36 @@ REGISTRE="/var/log/monitoritzacio_xarxa.log"
 
 # Funció per registrar missatges
 registre_missatge() {
-	echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $REGISTRE
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> $REGISTRE
 }
 
 # Funció per instal·lar iftop, ethtool i speedtest-cli si no estan instal·lats
 instal·lar_eines() {
-	for eina in iftop speedtest-cli; do
-    	if ! command -v $eina &> /dev/null; then
-        	registre_missatge "$eina no està instal·lat. Instal·lant $eina..."
-        	apt-get update
-        	apt-get install -y $eina
-        	registre_missatge "$eina s'ha instal·lat correctament"
-    	else
-        	registre_missatge "$eina ja està instal·lat"
-    	fi
-	done
+    for eina in iftop ethtool speedtest-cli; do
+        if ! command -v $eina &> /dev/null; then
+            registre_missatge "$eina no està instal·lat. Instal·lant $eina..."
+            apt-get update
+            apt-get install -y $eina
+            registre_missatge "$eina s'ha instal·lat correctament"
+        else
+            registre_missatge "$eina ja està instal·lat"
+        fi
+    done
 }
 
 # Funció per mostrar el menú
 mostrar_menu() {
-	clear
-	echo "==============================="
-	echo "MENÚ DE MONITORITZACIÓ DE XARXA"
-	echo "==============================="
-	echo "1. Configurar adaptador de xarxa"
-	echo "2. Monitoritzar l'ús d'ample de banda"
-	echo "3. Llistar connexions actives"
-	echo "4. Mostrar interfícies de xarxa"
-	echo "5. Realitzar una prova de velocitat"
-	echo "6. Sortir"
-	echo "==============================="
+    clear
+    echo "==============================="
+    echo "MENÚ DE MONITORITZACIÓ DE XARXA"
+    echo "==============================="
+    echo "1. Configurar adaptador de xarxa"
+    echo "2. Monitoritzar l'ús d'ample de banda"
+    echo "3. Llistar connexions actives"
+    echo "4. Mostrar interfícies de xarxa"
+    echo "5. Realitzar una prova de velocitat"
+    echo "6. Sortir"
+    echo "==============================="
 }
 
 # Variable per emmagatzemar l'adaptador de xarxa
@@ -48,119 +48,118 @@ adaptador_xarxa=""
 
 # Funció per configurar l'adaptador de xarxa
 configurar_adaptador() {
-	interficies=$(ls /sys/class/net | grep -v lo)
-	PS3="Selecciona un adaptador de xarxa: "
-	select opt in $interficies; do
-    	if [ -n "$opt" ]; then
-        	adaptador_xarxa=$opt
-        	registre_missatge "Adaptador de xarxa seleccionat: $adaptador_xarxa"
-       	 
-        	# Configura la IP, màscara de xarxa i broadcast
-        	echo "Configurant l'adaptador de xarxa $adaptador_xarxa"
-        	read -p "Introdueix la nova IP per $adaptador_xarxa: " nova_ip
-        	echo "S'estableix la IP: ifconfig $adaptador_xarxa $nova_ip"
-        	ifconfig $adaptador_xarxa $nova_ip
+    interficies=$(ls /sys/class/net | grep -v lo)
+    PS3="Selecciona un adaptador de xarxa: "
+    select opt in $interficies; do
+        if [ -n "$opt" ]; then
+            adaptador_xarxa=$opt
+            registre_missatge "Adaptador de xarxa seleccionat: $adaptador_xarxa"
+            
+            echo "Configurant l'adaptador de xarxa $adaptador_xarxa"
+            read -p "Introdueix la nova IP per $adaptador_xarxa: " nova_ip
+            echo "S'estableix la IP: ifconfig $adaptador_xarxa $nova_ip"
+            ifconfig $adaptador_xarxa $nova_ip
 
-        	read -p "Introdueix la màscara de xarxa per $adaptador_xarxa: " nova_mask
-        	echo "S'estableix la màscara: ifconfig $adaptador_xarxa netmask $nova_mask"
-        	ifconfig $adaptador_xarxa netmask $nova_mask
+            read -p "Introdueix la màscara de xarxa per $adaptador_xarxa: " nova_mask
+            echo "S'estableix la màscara: ifconfig $adaptador_xarxa netmask $nova_mask"
+            ifconfig $adaptador_xarxa netmask $nova_mask
 
-        	read -p "Introdueix l'adreça de broadcast per $adaptador_xarxa: " nova_broadcast
-        	echo "S'estableix el broadcast: ifconfig $adaptador_xarxa broadcast $nova_broadcast"
-        	ifconfig $adaptador_xarxa broadcast $nova_broadcast
+            read -p "Introdueix l'adreça de broadcast per $adaptador_xarxa: " nova_broadcast
+            echo "S'estableix el broadcast: ifconfig $adaptador_xarxa broadcast $nova_broadcast"
+            ifconfig $adaptador_xarxa broadcast $nova_broadcast
 
-        	echo "Activant l'adaptador de xarxa: ifconfig $adaptador_xarxa up"
-        	ifconfig $adaptador_xarxa up
-       	 
-        	if [ $? -eq 0 ]; then
-            	registre_missatge "Configuració de $adaptador_xarxa: IP=$nova_ip, Màscara=$nova_mask, Broadcast=$nova_broadcast"
-            	echo "Configuració aplicada correctament."
-        	else
-            	registre_missatge "Error en configurar $adaptador_xarxa"
-            	echo "No s'ha pogut aplicar la configuració. Revisa les dades introduïdes."
-        	fi
-        	break
-    	else
-        	echo "Opció invàlida. Intenta-ho de nou."
-    	fi
-	done
+            echo "Activant l'adaptador de xarxa: ifconfig $adaptador_xarxa up"
+            ifconfig $adaptador_xarxa up
+            
+            if [ $? -eq 0 ]; then
+                registre_missatge "Configuració de $adaptador_xarxa: IP=$nova_ip, Màscara=$nova_mask, Broadcast=$nova_broadcast"
+                echo "Configuració aplicada correctament."
+            else
+                registre_missatge "Error en configurar $adaptador_xarxa"
+                echo "No s'ha pogut aplicar la configuració. Revisa les dades introduïdes."
+            fi
+            break
+        else
+            echo "Opció invàlida. Intenta-ho de nou."
+        fi
+    done
 }
 
 # Funció per monitoritzar l'ample de banda
 monitoritzar_ample_banda() {
-	interficies=$(ls /sys/class/net | grep -v lo)
-	if [ -z "$interficies" ]; then
-    	echo "No s'han trobat adaptadors de xarxa."
-    	return
-	fi
+    interficies=$(ls /sys/class/net | grep -v lo)
+    if [ -z "$interficies" ]; then
+        echo "No s'han trobat adaptadors de xarxa."
+        return
+    fi
 
-	if [ $(echo "$interficies" | wc -l) -eq 1 ]; then
-    	adaptador_xarxa=$interficies
-    	echo "Monitoritzant automàticament l'únic adaptador: $adaptador_xarxa"
-	else
-    	PS3="Selecciona un adaptador de xarxa per monitoritzar: "
-    	select opt in $interficies; do
-        	if [ -n "$opt" ]; then
-            	adaptador_xarxa=$opt
-            	break
-        	else
-            	echo "Opció invàlida. Intenta-ho de nou."
-        	fi
-    	done
-	fi
+    if [ $(echo "$interficies" | wc -l) -eq 1 ]; then
+        adaptador_xarxa=$interficies
+        echo "Monitoritzant automàticament l'únic adaptador: $adaptador_xarxa"
+    else
+        PS3="Selecciona un adaptador de xarxa per monitoritzar: "
+        select opt in $interficies; do
+            if [ -n "$opt" ]; then
+                adaptador_xarxa=$opt
+                break
+            else
+                echo "Opció invàlida. Intenta-ho de nou."
+            fi
+        done
+    fi
 
-	registre_missatge "Monitoritzant l'ús d'ample de banda de $adaptador_xarxa"
-	iftop -i $adaptador_xarxa -t -s 2 -L 10
+    registre_missatge "Monitoritzant l'ús d'ample de banda de $adaptador_xarxa"
+    iftop -i $adaptador_xarxa -t -s 2 -L 10
 }
 
 # Funció per comprovar la connexió a Internet
 comprovar_conexio() {
-	echo "Comprovant la connexió a Internet..."
-	if ping -c 1 google.com &> /dev/null; then
-    	echo "La connexió a Internet és correcta."
-	else
-    	echo "No s'ha pogut connectar a Internet."
-	fi
+    echo "Comprovant la connexió a Internet..."
+    if ping -c 1 google.com &> /dev/null; then
+        echo "La connexió a Internet és correcta."
+    else
+        echo "No s'ha pogut connectar a Internet."
+    fi
 }
 
 # Funció per realitzar una prova de velocitat
 realitzar_prova_velocitat() {
-	comprovar_conexio
-	echo "Realitzant una prova de velocitat..."
-	speedtest-cli
+    comprovar_conexio
+    echo "Realitzant una prova de velocitat..."
+    speedtest-cli
 }
 
 # Funció per llistar connexions actives
 llistar_connexions() {
-	registre_missatge "Llistant connexions actives"
-	netstat -tulnp
+    registre_missatge "Llistant connexions actives"
+    netstat -tulnp
 }
 
 # Funció per mostrar interfícies de xarxa
 mostrar_interficies() {
-	registre_missatge "Mostrant interfícies de xarxa"
-	ifconfig -a
+    registre_missatge "Mostrant interfícies de xarxa"
+    ifconfig -a
 }
 
 # Funció per esperar a que l'usuari premi una tecla
 esperar_continuar() {
-	read -n 1 -s -r -p "Prem qualsevol tecla per continuar..."
+    read -n 1 -s -r -p "Prem qualsevol tecla per continuar..."
 }
 
 # Lògica principal de l'script
 instal·lar_eines
 
 while true; do
-	mostrar_menu
-	read -p "Selecciona una opció: " opcio
-	case $opcio in
-    	1) configurar_adaptador ;;
-    	2) monitoritzar_ample_banda ;;
-    	3) llistar_connexions ;;
-    	4) mostrar_interficies ;;
-    	5) realitzar_prova_velocitat ;;
-    	6) registre_missatge "Sortint de l'script"; exit 0 ;;
-    	*) echo "Opció invàlida";;
-	esac
-	esperar_continuar
+    mostrar_menu
+    read -p "Selecciona una opció: " opcio
+    case $opcio in
+        1) configurar_adaptador ;;
+        2) monitoritzar_ample_banda ;;
+        3) llistar_connexions ;;
+        4) mostrar_interficies ;;
+        5) realitzar_prova_velocitat ;;
+        6) registre_missatge "Sortint de l'script"; exit 0 ;;
+        *) echo "Opció invàlida";;
+    esac
+    esperar_continuar
 done
