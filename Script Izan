@@ -15,7 +15,7 @@ registre_missatge() {
 }
 
 # Funció per instal·lar iftop, ethtool i speedtest-cli si no estan instal·lats
-instal·lar_eines() {
+instalar_eines() {
     for eina in iftop ethtool speedtest-cli; do
         if ! command -v $eina &> /dev/null; then
             registre_missatge "$eina no està instal·lat. Instal·lant $eina..."
@@ -39,7 +39,8 @@ mostrar_menu() {
     echo "3. Llistar connexions actives"
     echo "4. Mostrar interfícies de xarxa"
     echo "5. Realitzar una prova de velocitat"
-    echo "6. Sortir"
+    echo "6. Instal·lar dependencies"
+    echo "7. Sortir"
     echo "==============================="
 }
 
@@ -158,7 +159,8 @@ while true; do
         3) llistar_connexions ;;
         4) mostrar_interficies ;;
         5) realitzar_prova_velocitat ;;
-        6) registre_missatge "Sortint de l'script"; exit 0 ;;
+        6) instalar_eines ;;
+        7) registre_missatge "Sortint de l'script"; exit 0 ;;
         *) echo "Opció invàlida";;
     esac
     esperar_continuar
