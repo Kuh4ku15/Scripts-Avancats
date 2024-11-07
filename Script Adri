@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Deshabilitar Ctrl+C
+trap '' SIGINT
+
 # Preguntar al usuario su nombre
 read -p "Por favor, ingrese su nombre de usuario en Ubuntu: " NOMBRE_USUARIO
 
@@ -118,4 +121,3 @@ while true; do
       ;;
   esac
 done
-
