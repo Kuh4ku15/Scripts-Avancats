@@ -16,16 +16,14 @@ registre_missatge() {
 
 # Funció per instal·lar iftop, ethtool i speedtest-cli si no estan instal·lats
 instalar_eines() {
-    for eina in iftop ethtool speedtest-cli; do
-        if ! command -v $eina &> /dev/null; then
-            registre_missatge "$eina no està instal·lat. Instal·lant $eina..."
-            apt-get update
-            apt-get install -y $eina
-            registre_missatge "$eina s'ha instal·lat correctament"
-        else
-            registre_missatge "$eina ja està instal·lat"
-        fi
-    done
+    sudo apt-get update
+    
+    sudo apt-get install -y iftop
+    sudo apt-get install -y ethtool
+    sudo apt-get install -y net-tools
+    sudo apt-get install -y netstat-nat
+    sudo apt-get install -y speedtest-cli
+    registre_missatge "$eina s'ha instal·lat correctament"
 }
 
 # Funció per mostrar el menú
